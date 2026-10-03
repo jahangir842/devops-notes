@@ -8,7 +8,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 .idea/
-.vscode/
 
 # Local credentials and infrastructure state
 .env
@@ -33,3 +32,7 @@ crash.log
 
 # Preserve the original learning fixture; ignore future generated dumps.
 !notes/kubernetes/mlflow/backup_mlflow.dump
+branch_structure.json
+temp_auto_push.bat
+temp_interactive_push.bat
+.gitignore
