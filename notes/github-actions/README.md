@@ -4,6 +4,11 @@
 
 Workflows, runners, environments, caching, and pull requests.
 
+## Start a project's workflows
+
+- [CI/CD reference: analysis of the imported project workflows](ci-cd-reference.md)
+- [Copyable CI, manual VPS deployment, and Dependabot templates](../../templates/github-actions/README.md)
+
 ## Notes and files
 
 - [1.actions types](1.actions-types.md)

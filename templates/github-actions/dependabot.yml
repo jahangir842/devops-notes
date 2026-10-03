@@ -1,0 +1,17 @@
+# Copy to .github/dependabot.yml (not .github/workflows/).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    # Optional owner assignment; this does not request a code review.
+    # assignees:
+    #   - YOUR_GITHUB_USERNAME
+
+  # Keep this block only for an npm project. Adjust the manifest directory.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

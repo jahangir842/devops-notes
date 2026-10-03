@@ -1,0 +1,166 @@
+# Copy to .github/workflows/cd.yml. Complete README.md before first use.
+# Search for CHANGE_ME. Keep ci.yml in sync with the preflight API path below.
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Reason for deploying the current main commit (do not enter secrets)
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: sandbox-vps-deploy
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  reject-non-main:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - run: |
+          echo "::error::Start this workflow from main."
+          exit 1
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: sandbox
+    steps:
+      - name: Verify selected commit and its latest push CI run
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          deploy_sha="$GITHUB_SHA"
+          [[ "$deploy_sha" =~ ^[0-9a-f]{40}$ ]]
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          if [[ "$deploy_sha" != "$main_sha" ]]; then
+            echo "::error::Selected commit is no longer the main tip. Start a new deployment after CI passes."
+            exit 1
+          fi
+
+          # Inspect the latest matching run, including its current rerun attempt.
+          # Do not filter status=success: an older success could hide a newer failure.
+          runs="$(gh api --method GET --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+            -f branch=main -f event=push -f head_sha="$deploy_sha" -f per_page=100)"
+          if ! jq -e --arg sha "$deploy_sha" '
+            [.[].workflow_runs[]] | max_by(.id) |
+            .head_sha == $sha and .head_branch == "main" and .event == "push" and
+            .status == "completed" and .conclusion == "success"
+          ' <<< "$runs" >/dev/null; then
+            echo "::error::The latest push CI run for this main commit must complete successfully."
+            exit 1
+          fi
+          echo "sha=$deploy_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Check environment configuration
+        env:
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
+          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+          SERVER_FINGERPRINT: ${{ secrets.SERVER_FINGERPRINT }}
+        run: |
+          set -euo pipefail
+          for name in SERVER_HOST SERVER_PORT SERVER_USER SERVER_SSH_KEY SERVER_FINGERPRINT; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::Missing environment secret: $name"
+              exit 1
+            fi
+          done
+
+      - name: Log deployment reason
+        env:
+          DEPLOY_REASON: ${{ inputs.reason || 'Manual deployment of main' }}
+        run: |
+          printf 'Deploy reason: %s\n' "$DEPLOY_REASON"
+
+      - name: Deploy validated commit over SSH
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          DEPLOY_SHA: ${{ steps.preflight.outputs.sha }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          port: ${{ secrets.SERVER_PORT }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          fingerprint: ${{ secrets.SERVER_FINGERPRINT }}
+          envs: DEPLOY_SHA
+          command_timeout: 40m
+          script: |
+            bash -se <<'DEPLOY'
+            set -euo pipefail
+            deploy_dir='/srv/CHANGE_ME'
+            compose_file='compose.vps.yml'
+            health_url='http://127.0.0.1:CHANGE_ME/health'
+
+            if [[ "$deploy_dir $health_url" == *CHANGE_ME* ]]; then
+              echo 'Configure deploy_dir and health_url in cd.yml before deploying.' >&2
+              exit 1
+            fi
+            [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+            cd "$deploy_dir"
+            # All deploy paths sharing this checkout must take this same lock.
+            # The descriptor is held until this shell and its children exit.
+            exec 9>"$(git rev-parse --git-path actions-deploy.lock)"
+            flock -n 9 || { echo 'Another deployment holds the server lock.' >&2; exit 1; }
+            if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+              echo 'Tracked server files have local edits; resolve them before deploying.' >&2
+              exit 1
+            fi
+
+            git fetch --no-tags origin refs/heads/main
+            if [[ "$(git rev-parse FETCH_HEAD)" != "$DEPLOY_SHA" ]]; then
+              echo 'main advanced after preflight; start a new deployment after CI passes.' >&2
+              exit 1
+            fi
+            git cat-file -e "$DEPLOY_SHA^{commit}"
+            previous_sha="$(git rev-parse HEAD)"
+            printf 'Previous checkout: %s\nDeploying: %s\n' "$previous_sha" "$DEPLOY_SHA"
+            git checkout --detach "$DEPLOY_SHA"
+            test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+
+            # Provision secrets on the server beforehand; do not generate/rotate here.
+            test -f .env || { echo 'Provision the server .env first.' >&2; exit 1; }
+            test -f "$compose_file"
+            # Validates interpolation without printing resolved secrets.
+            docker compose -f "$compose_file" config --quiet
+
+            # This base template assumes no schema migration is needed.
+            # Add the project's reviewed migration procedure before enabling CD.
+            # Use Compose healthchecks and exclude one-off tasks from normal `up`.
+            docker compose -f "$compose_file" up -d --build --wait --wait-timeout 120
+
+            healthy=false
+            for attempt in {1..12}; do
+              # Require HTTP 200; redirects must not make this check pass.
+              status="$(curl --silent --show-error --output /dev/null \
+                --write-out '%{http_code}' --connect-timeout 5 --max-time 10 \
+                "$health_url")" || status='000'
+              if [[ "$status" == '200' ]]; then
+                healthy=true
+                break
+              fi
+              printf 'Health attempt %s/12 failed (HTTP %s).\n' "$attempt" "$status" >&2
+              sleep 5
+            done
+            if [[ "$healthy" != true ]]; then
+              echo 'Health check failed. Inspect the deployment; no automatic rollback was performed.' >&2
+              exit 1
+            fi
+            printf 'Deployment healthy: %s\n' "$DEPLOY_SHA"
+            DEPLOY

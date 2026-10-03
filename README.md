@@ -19,6 +19,8 @@ python3 scripts/new_note.py inbox "Read about OpenTelemetry"
 
 You can also copy a [note template](templates/note.md) or [lab template](templates/lab.md) and update the indexes manually. See the [writing guide](CONTRIBUTING.md) for examples.
 
+For project automation, start with the [GitHub Actions templates](templates/github-actions/README.md): CI, manual VPS deployment, Dependabot updates, and review requests, with an adaptation guide.
+
 ## Browse by topic
 
 | Area | Topics |
@@ -41,7 +43,7 @@ devops-notes/
 ├── CONTRIBUTING.md    # Daily workflow and naming conventions
 ├── notes/             # Long-term notes and labs, organized by topic
 ├── inbox/             # Quick captures to sort later
-├── templates/         # Note and lab starting points
+├── templates/         # Note, lab, and project workflow starting points
 ├── scripts/           # Helper for creating and logging notes
 └── .github/           # Repository workflows
 ```

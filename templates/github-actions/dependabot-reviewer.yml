@@ -1,0 +1,34 @@
+# Optional: copy to .github/workflows/dependabot-reviewer.yml.
+# Set repository Actions variable DEPENDABOT_REVIEWER to one GitHub username.
+name: Request Dependabot review
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, ready_for_review]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  request-review:
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # Metadata only. Never check out, build, or execute the PR's code here.
+      - name: Request configured reviewer's review
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REVIEWER: ${{ vars.DEPENDABOT_REVIEWER }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$REVIEWER" ]]; then
+            echo '::error::Set repository Actions variable DEPENDABOT_REVIEWER to one eligible GitHub username.'
+            exit 1
+          fi
+          gh api --method POST \
+            "repos/${GH_REPO}/pulls/${PR_NUMBER}/requested_reviewers" \
+            -f "reviewers[]=$REVIEWER" --silent

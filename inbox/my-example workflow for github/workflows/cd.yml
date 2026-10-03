@@ -1,0 +1,95 @@
+name: CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Reason for redeploying the current main commit
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: sandbox-vps-deploy
+  cancel-in-progress: false
+
+jobs:
+  reject-non-main:
+    if: github.ref != 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "::error::Manual deployments must be started from main."
+          exit 1
+
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: sandbox
+    steps:
+      - name: Verify deploy commit passed CI on main
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          main_sha="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/heads/main" --jq '.object.sha')"
+          deploy_sha="$GITHUB_SHA"
+          [[ "$deploy_sha" =~ ^[0-9a-f]{40}$ ]]
+          if [[ "$deploy_sha" != "$main_sha" ]]; then
+            echo "::error::CI revision is no longer the main tip; wait for the newer CI run."
+            exit 1
+          fi
+          gh api --method GET "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs" \
+            -f branch=main -f event=push -f head_sha="$deploy_sha" -f status=success \
+            --jq '.workflow_runs' |
+            jq -e --arg sha "$deploy_sha" 'any(.[]; .head_sha == $sha and .conclusion == "success")' >/dev/null
+          echo "sha=$deploy_sha" >> "$GITHUB_OUTPUT"
+
+      - name: Log deployment reason
+        env:
+          DEPLOY_REASON: ${{ inputs.reason || 'Manual redeploy of main' }}
+        run: |
+          printf 'Deploy reason: %s\n' "$DEPLOY_REASON"
+
+      - name: SSH into EWS and deploy
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          DEPLOY_SHA: ${{ steps.preflight.outputs.sha }}
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          envs: DEPLOY_SHA
+          command_timeout: 40m
+          script: |
+            set -e
+            cd /root/stealth-payment-sdk-backend
+            echo "Checking out validated commit $DEPLOY_SHA"
+            git fetch origin main
+            test "$(git rev-parse FETCH_HEAD)" = "$DEPLOY_SHA"
+            git cat-file -e "$DEPLOY_SHA^{commit}"
+            git checkout --detach "$DEPLOY_SHA"
+            test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+
+            # Server-local secrets for docker-compose.vps.yml interpolation.
+            umask 077
+            touch .env
+            grep -q '^POSTGRES_PASSWORD=' .env || { echo "POSTGRES_PASSWORD=$(openssl rand -hex 24)" >> .env; }
+            grep -q '^JWT_SECRET=' .env || { echo "JWT_SECRET=$(openssl rand -hex 32)" >> .env; }
+            grep -q '^NSM_ENCRYPTION_KEY=' .env || { echo "NSM_ENCRYPTION_KEY=$(openssl rand -hex 32)" >> .env; }
+            grep -q '^SMTP_USER=.\+' .env \
+              || echo "SMTP_USER/SMTP_PASSWORD not set; OTP emails will not be sent."
+
+            echo "Rebuilding containers with validated commit..."
+            docker compose -f docker-compose.vps.yml up -d --build
+            echo "Running DB migrations and demo seed..."
+            docker compose -f docker-compose.vps.yml run --build --rm migrate
+            echo "Checking service health..."
+            sleep 3
+            curl -fsS http://10.8.0.2:8086/health
+            echo "Deployment complete: $DEPLOY_SHA"
