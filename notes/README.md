@@ -20,6 +20,7 @@ Choose the subject you would search for later. Keep runnable examples and their 
 | [Cloud](cloud/README.md) | Cloud services, architecture, Azure learning resources, and project ideas. |
 | [Observability](observability/README.md) | Metrics, logs, traces, alerts, and reliability. |
 | [Security](security/README.md) | Identity, secrets management, hardening, and supply chain security. |
+| [npm](npm/README.md) | Node.js package management, dependency manifests, lockfiles, and reproducible installs. |
 | [Scripting](scripting/README.md) | Bash, Python, and everyday automation. |
 | [Interviews](interviews/README.md) | DevOps interview questions and preparation notes. |
 

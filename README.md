@@ -25,7 +25,7 @@ For project automation, start with the [GitHub Actions templates](templates/gith
 
 | Area | Topics |
 | --- | --- |
-| Foundations | [Linux](notes/linux/README.md), [Networking](notes/networking/README.md), [Git](notes/git/README.md), [Scripting](notes/scripting/README.md) |
+| Foundations | [Linux](notes/linux/README.md), [Networking](notes/networking/README.md), [Git](notes/git/README.md), [Scripting](notes/scripting/README.md), [npm](notes/npm/README.md) |
 | Containers | [Docker](notes/docker/README.md), [Kubernetes](notes/kubernetes/README.md) |
 | Infrastructure and automation | [Ansible](notes/ansible/README.md), [Terraform](notes/terraform/README.md), [Bicep](notes/bicep/README.md) |
 | CI/CD | [GitHub Actions](notes/github-actions/README.md), [Azure DevOps](notes/azure-devops/README.md), [Jenkins](notes/jenkins/README.md) |
