@@ -4,7 +4,9 @@
 
 Identity, secrets management, hardening, and supply chain security.
 
-This topic is ready for new notes.
+## Notes
+
+- [GitHub dependency graph and Dependabot](github-dependency-security.md)
 
 ## Existing related notes
 

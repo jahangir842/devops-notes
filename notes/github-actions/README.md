@@ -23,6 +23,7 @@ Workflows, runners, environments, caching, and pull requests.
 ## Related material
 
 - [Git hooks](../git/git-hooks.md)
+- [GitHub dependency graph and Dependabot](../security/github-dependency-security.md)
 - [Existing repository workflow](../../.github/workflows/use-keyvault-secret.yml)
 
 `workflows/` contains learning examples. GitHub runs workflows from the root `.github/workflows/` directory.

@@ -9,6 +9,7 @@ The note helper adds entries automatically. For manually added or substantially 
 ## Reading queue
 
 <!-- entries -->
+- [ ] 2026-10-03 — [GitHub dependency graph and Dependabot](notes/security/github-dependency-security.md) — How dependency inventory, alerts, security updates, version updates, and pull request review fit together.
 - [ ] 2026-02-05 — [Day 2 delete a swim lane from a task board](notes/azure-devops/brian-training-notes/day-2-delete-a-swim-lane-from-a-task-board.md)
 - [ ] 2026-01-28 — [Day 2 splitting queries grouping clauses](notes/azure-devops/brian-training-notes/day-2-splitting-queries-grouping-clauses.md)
 - [ ] 2026-01-26 — [Docker build and push](notes/github-actions/workflows/docker-build-and-push.yml)
