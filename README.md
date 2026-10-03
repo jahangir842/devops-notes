@@ -1,169 +1,59 @@
+# DevOps notes
 
-# DevOps Learning Repository
+My working notebook for learning DevOps: concepts, commands, troubleshooting, course material, and practical labs.
 
-🚀 Level Up Your Azure Skills — 100% FREE Hands-On Labs! 💻
+**[Latest additions & read later](LATEST.md)** · **[Browse all topics](notes/README.md)** · **[Learning inbox](inbox/README.md)** · **[How to add notes](CONTRIBUTING.md)**
 
-Perfect for anyone preparing for Microsoft certifications or looking to sharpen their cloud expertise. 🌐
+## Daily learning
 
-- AZ-104 – Microsoft Azure Administrator 👉 https://lnkd.in/gNhrvxYU
-- AZ-500 – Azure Security Technologies 🔐 👉 https://lnkd.in/gtkisVEH
-- AZ-700 – Azure Networking Solutions 🌍 👉 https://lnkd.in/g_4cg4SF
-- AZ-305 – Azure Infrastructure Solutions 🏗️ 👉 https://lnkd.in/g3fGZSWr
-- AZ-140 – Azure Virtual Desktop 🖥️ 👉 https://lnkd.in/guyYeBu2
-- AZ-800 – Windows Server Hybrid Core ⚙️ 👉 https://lnkd.in/gbuVGcpm
-- AZ-801 – Windows Server Hybrid Advanced 🔧 👉 https://lnkd.in/gdriz7z3
-- SC-300 – Identity & Access Administrator 🛡️ 👉 https://lnkd.in/gPJDYF3t
-- AZ-400 – DevOps Solutions ⚡ 👉 https://lnkd.in/g52DNbhd
+1. Add a note to its topic, or capture an unfinished idea in `inbox/`.
+2. Keep a dated link in **[LATEST.md](LATEST.md)** so it is easy to find later.
+3. When you have time, read an unchecked entry and tick it off. Completed entries stay as your learning history.
 
----
+From the repository root, Python 3.9+ can create a note, link it in the topic index, and add it to the reading queue:
 
-## 📁 Repository Structure
-
-Each folder contains hands-on examples, configuration files, and brief documentation where applicable.
-
-### 🔧 `ansible`
-Contains playbooks, inventory files, and examples using Ansible for configuration management and automation.
-
-- Examples using `ansible.builtin.*` modules.
-- Playbook best practices.
-- Dynamic inventory setup.
-
-📌 Example:
 ```bash
-ansible-playbook playbooks/install_nginx.yml -i inventory/hosts
+python3 scripts/new_note.py kubernetes/concepts "Pod disruption budgets"
+python3 scripts/new_note.py inbox "Read about OpenTelemetry"
 ```
 
-### 🐳 `docker`
-Includes Dockerfiles, Docker Compose configurations, and usage examples.
+You can also copy a [note template](templates/note.md) or [lab template](templates/lab.md) and update the indexes manually. See the [writing guide](CONTRIBUTING.md) for examples.
 
-- Dockerfile samples for various apps.
-- Multi-stage builds.
-- Docker Compose for multi-container apps.
+## Browse by topic
 
-📌 Example:
+| Area | Topics |
+| --- | --- |
+| Foundations | [Linux](notes/linux/README.md), [Networking](notes/networking/README.md), [Git](notes/git/README.md), [Scripting](notes/scripting/README.md) |
+| Containers | [Docker](notes/docker/README.md), [Kubernetes](notes/kubernetes/README.md) |
+| Infrastructure and automation | [Ansible](notes/ansible/README.md), [Terraform](notes/terraform/README.md), [Bicep](notes/bicep/README.md) |
+| CI/CD | [GitHub Actions](notes/github-actions/README.md), [Azure DevOps](notes/azure-devops/README.md), [Jenkins](notes/jenkins/README.md) |
+| Cloud and operations | [Cloud](notes/cloud/README.md), [Observability](notes/observability/README.md), [Security](notes/security/README.md) |
+| Career preparation | [Interview notes](notes/interviews/README.md) |
+
+Each topic has an index. Existing Kubernetes labs, monitoring configurations, Ansible projects, and Terraform exercises keep their files together. Foundation folders provide a home for future notes; related material is linked where available.
+
+## Repository layout
+
+```text
+devops-notes/
+├── README.md          # Start here
+├── LATEST.md          # Dated additions and reading checkboxes
+├── CONTRIBUTING.md    # Daily workflow and naming conventions
+├── notes/             # Long-term notes and labs, organized by topic
+├── inbox/             # Quick captures to sort later
+├── templates/         # Note and lab starting points
+├── scripts/           # Helper for creating and logging notes
+└── .github/           # Repository workflows
+```
+
+## Finding and using material
+
+Browse the [topic directory](notes/README.md), use GitHub's file search, or search locally:
+
 ```bash
-docker compose -f compose/node-app.yml up -d
+rg -n -i 'ingress' notes/ --glob '*.md'
 ```
 
-### ☸️ `kubernetes`
-Kubernetes manifests, Helm charts, and kubectl usage examples.
+Read a lab's own instructions before running its examples. Existing technical notes and version references have been preserved and have not all been revalidated. New notes should record what was tested and with which versions.
 
-- Deployment, Service, Ingress YAML files.
-- Helm basics.
-- kustomize usage.
-
-📌 Example:
-```bash
-kubectl apply -f manifests/deployment.yaml
-```
-
-### 🌍 `terraform`
-Infrastructure as Code using Terraform across different cloud providers.
-
-- AWS and Azure modules.
-- Remote state management.
-- Terraform Cloud examples.
-
-📌 Example:
-```bash
-terraform init
-terraform apply
-```
-
-### 🚀 `azure-devops`
-Pipelines and tasks for automating CI/CD on Azure DevOps.
-
-- YAML pipeline examples.
-- Service connections.
-- Multi-stage pipeline configuration.
-
-📌 Example:
-```yaml
-trigger:
-  branches:
-    include:
-      - main
-```
-
-### 🧬 `github-actions`
-Workflows for automating tasks with GitHub Actions.
-
-- CI/CD pipelines using `.github/workflows/`.
-- Matrix builds and secrets.
-- Deployment workflows.
-
-📌 Example:
-```yaml
-name: Build and Test
-on: [push, pull_request]
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-```
-
----
-
-## 📚 Getting Started
-
-To start using the examples:
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/devops-learning.git
-   cd devops-learning
-   ```
-
-2. Navigate to the folder you're interested in and follow the instructions in the README (if available).
-
-
-
----
-
-The best way to learn Azure: Projects, not tutorials.
-
-👉Build a global static website with Azure Blob Storage + Azure CDN + Azure Front Door for multi-region failover
-
-👉 Create a microservices architecture using Azure Functions + Azure API Management + Azure Service Bus for async messaging
-
-👉 Deploy a scalable chatbot with Azure Bot Service + Language Studio + Azure Cognitive Search for intelligent document retrieval
-
-👉 Set up a high-availability database cluster with Azure SQL Database + read replicas + automatic failover groups
-
-👉 Build an AI-powered image processing pipeline with Azure AI Vision + Azure Event Grid + Azure Logic Apps for automated workflows
-
-👉 Create a real-time data analytics platform with Azure Event Hubs + Azure Stream Analytics + Azure Synapse Analytics + Power BI dashboards
-
-👉 Implement end-to-end MLOps with Azure Machine Learning + Azure DevOps + Azure Container Registry for model deployment and monitoring
-
-👉 Design a disaster recovery solution with Azure Site Recovery + Azure Backup + geo-redundant storage across multiple regions
-
-👉 Build a secure multi-tenant SaaS application with Azure Active Directory B2C + Azure Key Vault + Azure Application Gateway with WAF
-
-👉 Create a serverless data lake with Azure Data Factory + Azure Data Lake Storage + Azure Databricks for big data processing
-
-👉 Deploy a container orchestration platform with Azure Kubernetes Service + Azure Container Registry + Helm charts + Azure Monitor for observability
-
-👉 Set up infrastructure as code with Terraform + Azure DevOps pipelines + Azure Resource Manager templates for automated provisioning
-
-These aren’t hello-world projects. These are production-grade systems that teach you how Azure actually works in the real world.
-
-Tutorials teach you syntax. Projects teach you architecture.
-
----
-
-## 🧩 Contributions
-
-Feel free to open issues or pull requests to add new tools, fix examples, or enhance documentation.
-
----
-
-## 🛡 License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-Happy Automating! 🚀
-```
+The Azure links and project ideas from the former homepage are in [Azure learning resources](notes/cloud/azure-learning-resources.md). The [reorganization notes](docs/reorganization.md) explain where the original folders moved.

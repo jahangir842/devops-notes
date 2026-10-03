@@ -1,0 +1,35 @@
+# Local environments and generated files
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+node_modules/
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Local credentials and infrastructure state
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+*.tfvars.json
+!*.example.tfvars
+!*.example.tfvars.json
+crash.log
+
+# Generated lab backups and image exports
+*.dump
+*.tar
+*.tar.gz
+
+# Preserve the original learning fixture; ignore future generated dumps.
+!notes/kubernetes/mlflow/backup_mlflow.dump
