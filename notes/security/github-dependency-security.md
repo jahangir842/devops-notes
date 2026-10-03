@@ -31,13 +31,19 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    assignees:
+      - "jahangir842"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
+    assignees:
+      - "jahangir842"
 ```
 
-Use only entries for ecosystems and manifest locations actually present in the repository. The `github-actions` entry uses `/` even though workflow files live under `.github/workflows/`. This file configures version updates; Dependabot alerts and security updates are enabled separately in **Settings → Advanced Security**. This is an example for future use, not a configuration added to this repository.
+`assignees` lists GitHub usernames to assign to Dependabot pull requests for that ecosystem. GitHub applies it to both version and security update pull requests (except security updates configured for a non-default target branch). The assignee must have suitable repository access; for a personal repository, that means write access.
+
+Use only entries for ecosystems and manifest locations actually present in the repository. The `github-actions` entry uses `/` even though workflow files live under `.github/workflows/`. This file configures version updates; Dependabot alerts and security updates are enabled separately in **Settings → Advanced Security**. The example's npm entry is illustrative. This repository's [actual Dependabot configuration](../../.github/dependabot.yml) monitors GitHub Actions weekly and assigns its pull requests to `jahangir842`.
 
 ## Where to look on GitHub
 
@@ -55,7 +61,7 @@ Use only entries for ecosystems and manifest locations actually present in the r
 
 ## Verification
 
-Checked GitHub's documentation on 2026-10-03. The configuration and UI steps above have not been tested in this repository.
+Checked GitHub's documentation on 2026-10-03. The YAML was reviewed locally; GitHub has not yet processed this configuration, so pull request assignment has not been observed.
 
 ## Sources and related notes
 
@@ -64,6 +70,7 @@ Checked GitHub's documentation on 2026-10-03. The configuration and UI steps abo
 - [GitHub: Configuring Dependabot alerts](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-dependabot-alerts)
 - [GitHub: Configuring Dependabot security updates](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-security-updates)
 - [GitHub: Configuring Dependabot version updates](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/secure-your-dependencies/configure-version-updates)
+- [GitHub: Dependabot `assignees` option](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference#assignees)
 - [GitHub: Dependency review](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review)
 - [GitHub: Supported dependency graph ecosystems](https://docs.github.com/en/code-security/reference/supply-chain-security/dependency-graph-supported-package-ecosystems)
 - [GitHub Actions notes](../github-actions/README.md)
