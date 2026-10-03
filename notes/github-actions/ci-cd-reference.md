@@ -88,6 +88,35 @@ For exact syntax and token permission behavior, use the [GitHub workflow syntax 
 
 `pull_request_target` is appropriate here only because the review job operates on metadata. Running PR code in that privileged context exposes write access or secrets. Keep build/test work on `pull_request`; see [GitHub's event security guidance](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request_target). Dependabot-triggered runs have additional token/secret restrictions, so diagnose actual API permissions rather than introducing a broad PAT; see [Dependabot Actions troubleshooting](https://docs.github.com/en/code-security/reference/supply-chain-security/troubleshoot-dependabot/dependabot-on-actions).
 
+## Tests, security checks, and malware scanning
+
+Start with meaningful application tests and security checks that match the project. The starter already runs `npm test` in `ci.yml`; the application must supply the actual test suite. Keep unit tests in CI initially. Add integration tests for database/API interactions and end-to-end tests for critical user flows as needed. Separate test workflows are useful when suites need different environments, schedules, or execution times.
+
+| Check | What it covers | Suggested use |
+| --- | --- | --- |
+| Build, lint, type checks, and tests | Compilation, code quality, and expected application behavior | PRs and pushes to `main`; make essential checks required |
+| Dependency review | Known vulnerabilities introduced by dependency changes | PRs; complement Dependabot alerts and update PRs |
+| Code scanning, such as CodeQL | Potential security vulnerabilities and coding errors | Configure supported languages and scan PRs/main; periodic scans can find newly detectable issues |
+| Secret scanning and push protection | Supported credential patterns committed to the repository | Enable available repository features; push protection can block supported secrets before a push completes |
+| Malware scanning, such as ClamAV | Detectable malware in files, including supported binaries and archives | Consider for bundled third-party files and release artifacts; choose the files to scan explicitly |
+
+Dependency review detects known vulnerable dependency versions; it does not establish that a package is free of malicious code. Code scanning, secret scanning, and antivirus scanning cover different problems. A clean result from any scanner is not proof that the application is safe. GitHub feature availability depends on repository visibility and plan; check the relevant [dependency review](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review), [code scanning](https://docs.github.com/en/code-security/concepts/code-scanning/code-scanning), and [secret scanning](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning) documentation before choosing the setup.
+
+For an ordinary source-code application, prioritize tests, dependency review, code scanning, and secret protection. Add malware scanning when the files being stored or distributed justify it. [ClamAV](https://docs.clamav.net/) scans files using its detection engine and signature databases; keep those databases current. A repository scan cannot inspect future user uploads. Applications that accept uploads need a runtime scanning/quarantine process before making those files available.
+
+### Make required checks control deployment
+
+The current CD template checks only the latest matching **push run of `ci.yml` for the deployment SHA**. Adding a separate test or security workflow does not automatically make it part of that gate. Requiring checks before merging also does not change what the manual CD preflight verifies.
+
+Choose one approach when extending the templates:
+
+1. Keep required tests and security jobs inside `ci.yml`, so their failures fail the workflow CD already checks. Ensure they actually run on pushes to `main`, and do not mask failures with `continue-on-error` or conditions that skip required work.
+2. If separate workflows are necessary, extend CD preflight to verify the latest relevant run/attempt of **every required workflow** for the same deployment SHA, branch, and intended event. Missing, pending, cancelled, skipped, or failed required results must block deployment.
+
+Dependency review is a PR check; do not expect it to produce a push run. Use it as a required merge check, and add an appropriate dependency scan on `main` if deployment must independently verify dependency findings. Likewise, a scanner that uploads alerts but exits successfully does not enforce a severity policy by itself: configure blocking behavior or a suitable protection rule explicitly.
+
+For this DevOps notes repository, prioritize workflow linting, Markdown/local-link checks, and secret scanning. Application tests belong in projects that contain application code. See the [template extension checklist](../../templates/github-actions/README.md#extend-tests-and-security-checks) when copying the starter.
+
 ## Transfer the pattern to other projects
 
 | Target | Keep | Adapt |

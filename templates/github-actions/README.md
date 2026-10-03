@@ -65,6 +65,30 @@ The optional username comment can be removed if assignees are unnecessary. Revie
 
 The checkout step disables persisted credentials; setup-node caches npm downloads. `npm ci` still installs from the lockfile on each run. For a monorepo, set `defaults.run.working-directory` for shell commands **and** update `node-version-file` and `cache-dependency-path`: action inputs do not inherit the shell working directory. See [checkout](https://github.com/actions/checkout) and [setup-node](https://github.com/actions/setup-node).
 
+## Extend tests and security checks
+
+The starter's `ci.yml` already runs `npm test`. Implement real unit tests in the target application, then add integration tests and critical end-to-end tests where needed. Keep tests in CI initially; split them into separate jobs or workflows when their environments or schedules justify it. See the [reference guidance](../../notes/github-actions/ci-cd-reference.md#tests-security-checks-and-malware-scanning) for the purpose and limits of each check.
+
+| Addition | Where to configure it | Adoption notes |
+| --- | --- | --- |
+| Lint/type checks and application tests | Steps or jobs in `ci.yml` | Run on PRs and pushes to `main`; use real scripts and fail on errors |
+| Dependency review | A PR job or separate PR workflow | Block newly introduced vulnerable dependencies according to the project's policy; complements Dependabot |
+| CodeQL/code scanning | GitHub code scanning setup or a configured workflow | Select supported languages and suitable triggers; decide which findings block changes |
+| Secret scanning/push protection | Repository security settings where available | These features can be enabled without adding a workflow; use a dedicated scanner if the project needs additional coverage |
+| Optional ClamAV scan | A job that scans selected bundled files or release artifacts | Refresh signatures, handle detections and scan errors, and inspect the actual files that will be distributed |
+
+The starter files implement build/test execution and Dependabot automation. The additional scans above are configuration choices to add for the target project. Consult [dependency review](https://docs.github.com/en/code-security/concepts/supply-chain-security/dependency-review), [code scanning](https://docs.github.com/en/code-security/concepts/code-scanning/code-scanning), [secret scanning](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning), and [ClamAV](https://docs.clamav.net/) for capabilities and availability.
+
+Before treating a new check as required:
+
+1. Identify what it scans: source files, dependency changes, installed packages, or a built artifact. A dependency vulnerability check does not guarantee that packages contain no malware.
+2. Choose triggers and failure rules. Essential tests should run on PRs and pushes to `main`. Dependency review is PR-specific; use a suitable scan for any separate main-branch dependency gate. Alert reporting alone may not fail a workflow.
+3. Give jobs only necessary permissions, pin added actions to verified full commit SHAs, and keep PR code execution out of `pull_request_target`. See [GitHub's secure use reference](https://docs.github.com/en/actions/reference/security/secure-use).
+4. Connect required results to deployment. **CD currently checks only `ci.yml`.** Required jobs inside CI must run and fail the workflow when unsuccessful. For separate required workflows, extend CD's API checks to require the latest relevant run/attempt for the same SHA, branch, and event. Block missing, pending, skipped, cancelled, or failed results; a passing PR check is not automatically a passing push check for the deployed commit.
+5. Verify enforcement in the target sandbox: deliberately fail a required test or scan and confirm the PR/deployment is blocked, then fix it and confirm the intended path succeeds. Branch protection controls merging; CD preflight controls this manual deployment path.
+
+Malware scanning is optional for a typical source-code project and more useful when handling binaries, archives, or distributed artifacts. If the application accepts uploads, implement runtime scanning/quarantine too; CI cannot scan files uploaded after deployment. For this notes repository, workflow linting, link checks, and secret scanning are the most useful starting checks.
+
 ## Configure GitHub for CD
 
 Create **Settings → Environments → sandbox** and restrict deployment branches to `main`. Add required reviewers if available for the repository and desired for this environment. These controls live in GitHub settings; `environment: sandbox` alone does not configure protection. Review feature availability for your plan in [GitHub's environment reference](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments).
